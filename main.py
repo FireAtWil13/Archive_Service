@@ -29,17 +29,24 @@ def create_path(path, dest = 'archive'):  #создаем путь для пер
   for i in path[path.index('/')+1:].split                                 ('/'):
       new_path = os.path.join(new_path, i)
       if not os.path.exists(new_path):
-        os.mkdir(new_path)  
+        try:
+          os.mkdir(new_path)  
+        except(FileExistsError, PermissionError):
+          pass
+          
 
 def clear_path(old_path):                   #удаляем старую папку
   if not (os.listdir(old_path)):
     os.rmdir(old_path)
     path = Path(old_path)
-    clear_path(path.parent)
+    try:
+      clear_path(path.parent)
+    except:
+      pass
 
 
 def archive(free_space, days, days_list, dest = 'archive'):
-
+  
   while get_free_space() < free_space or max(days_list) > 90:
 
     path = days.pop(days_list.pop(0))
@@ -48,11 +55,14 @@ def archive(free_space, days, days_list, dest = 'archive'):
     create_path(path)
         
     for file in files:
-      with open('log.txt', 'a') as log:  
-        log.write('''%s \t File \t '%s' \t was moved from \t '%s' \t to \t'%s'\t\n''' % (datetime.now(), file.split('/')[-1], path, path.replace('storage','archive')))
+      if file.endswith(('.mp3','.wav')):
+        try:
+          shutil.move(file, file.replace('storage','archive')) 
+          with open('log.txt', 'a') as log:  
+            log.write('''%s \t File \t '%s' \t was moved from \t '%s' \t to \t'%s'\t\n''' % (datetime.now(), file.split('/')[-1], path, path.replace('storage','archive')))
+        except:
+          pass
 
-      shutil.move(file, file.replace('storage','archive'))
-    
     clear_path(path)
 
 
@@ -71,8 +81,3 @@ while True:       #Главный цикл
     archive(free_space, days, days_list)
   
   time.sleep(5)
-
-
-
-
-
